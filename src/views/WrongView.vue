@@ -1,7 +1,8 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { supabase } from '../lib/supabase'
+import { fetchWrong } from '../lib/localApi'
+import { settings } from '../lib/settings'
 
 const loading = ref(false)
 const errorText = ref('')
@@ -11,17 +12,7 @@ async function load() {
   loading.value = true
   errorText.value = ''
   try {
-    const { data, error } = await supabase
-      .from('user_problem_state')
-      .select('problem_id, last_is_correct, problems:problem_id(id, section, source_no, question_type, stem)')
-      .eq('last_is_correct', false)
-      .order('last_answered_at', { ascending: false })
-
-    if (error) throw error
-
-    rows.value = (data ?? [])
-      .map((r) => r.problems)
-      .filter(Boolean)
+    rows.value = await fetchWrong()
   } catch (e) {
     errorText.value = e?.message ?? String(e)
   } finally {
@@ -37,6 +28,7 @@ function typeLabel(type) {
 }
 
 onMounted(load)
+watch(settings, () => load(), { deep: true })
 </script>
 
 <template>
@@ -92,4 +84,3 @@ onMounted(load)
   overflow: hidden;
 }
 </style>
-

@@ -1,8 +1,8 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { fetchProblems, fetchUserStates } from '../lib/problems'
-import { user } from '../lib/session'
+import { fetchProblems, fetchUserStates } from '../lib/localApi'
+import { settings } from '../lib/settings'
 
 const section = ref('all')
 const query = ref('')
@@ -56,7 +56,7 @@ watch([section, query], () => {
   page.value = 1
 })
 
-watch([section, query, page, user], () => load())
+watch([section, query, page, settings], () => load(), { deep: true })
 
 onMounted(load)
 </script>
@@ -235,4 +235,3 @@ onMounted(load)
   cursor: not-allowed;
 }
 </style>
-

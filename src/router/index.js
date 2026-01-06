@@ -1,5 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { getUser } from '../lib/session'
+import { createRouter, createWebHashHistory } from 'vue-router'
 
 const ProblemListView = () => import('../views/ProblemListView.vue')
 const ProblemDetailView = () => import('../views/ProblemDetailView.vue')
@@ -10,23 +9,16 @@ const WrongView = () => import('../views/WrongView.vue')
 const NotFoundView = () => import('../views/NotFoundView.vue')
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes: [
     { path: '/', name: 'home', component: ProblemListView },
     { path: '/p/:id', name: 'problem', component: ProblemDetailView, props: true },
     { path: '/login', name: 'login', component: LoginView },
-    { path: '/me', name: 'me', component: MeView, meta: { requiresAuth: true } },
-    { path: '/me/favorites', name: 'favorites', component: FavoritesView, meta: { requiresAuth: true } },
-    { path: '/me/wrong', name: 'wrong', component: WrongView, meta: { requiresAuth: true } },
+    { path: '/me', name: 'me', component: MeView },
+    { path: '/me/favorites', name: 'favorites', component: FavoritesView },
+    { path: '/me/wrong', name: 'wrong', component: WrongView },
     { path: '/:pathMatch(.*)*', name: '404', component: NotFoundView },
   ],
-})
-
-router.beforeEach(async (to) => {
-  if (!to.meta.requiresAuth) return true
-  const user = await getUser()
-  if (user) return true
-  return { name: 'login', query: { redirect: to.fullPath } }
 })
 
 export default router

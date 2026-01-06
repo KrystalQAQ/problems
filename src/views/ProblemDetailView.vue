@@ -1,8 +1,9 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useRouter } from 'vue-router'
-import { fetchAdjacentProblemId, fetchProblem, fetchUserStates, submitAnswer, toggleFavorite } from '../lib/problems'
+import { fetchAdjacentProblemId, fetchProblem, fetchUserStates, submitAnswer, toggleFavorite } from '../lib/localApi'
+import { settings } from '../lib/settings'
 import { user } from '../lib/session'
 
 const route = useRoute()
@@ -28,6 +29,8 @@ const optionsList = computed(() => {
   if (!opts) return []
   return Object.entries(opts).map(([k, v]) => ({ key: k, text: v }))
 })
+
+const canSubmit = computed(() => true)
 
 const correctChoices = computed(() => problem.value?.answer?.choices ?? [])
 const isMulti = computed(() => problem.value?.question_type === 'multiple_choice')
@@ -148,6 +151,7 @@ async function goNext() {
 }
 
 onMounted(load)
+watch(settings, () => load(), { deep: true })
 </script>
 
 <template>
@@ -194,7 +198,7 @@ onMounted(load)
       <div class="actions">
         <button class="btn" type="button" :disabled="!prevId || navBusy" @click="goPrev">上一题</button>
         <button class="btn btn--primary" type="button" @click="onSubmit">
-          {{ user ? '提交' : '显示答案' }}
+          {{ canSubmit ? '提交' : '显示答案' }}
         </button>
         <button class="btn" type="button" @click="reveal = !reveal">
           {{ reveal ? '隐藏答案' : '显示答案' }}

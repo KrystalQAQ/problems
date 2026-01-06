@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { signInWithPassword, signUp } from '../lib/session'
+import { syncProblemsFromSupabase } from '../lib/sync'
+import { hasSupabaseConfig } from '../lib/supabase'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,7 +19,17 @@ async function onLogin() {
   errorText.value = ''
   infoText.value = ''
   try {
+    if (!hasSupabaseConfig()) {
+      throw new Error('未配置 Supabase 环境变量：请设置 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY')
+    }
     await signInWithPassword({ email: email.value.trim(), password: password.value })
+    infoText.value = '登录成功，正在同步题库到本地缓存…'
+    try {
+      const count = await syncProblemsFromSupabase()
+      infoText.value = `题库已同步到本地（${count} 题）`
+    } catch (e) {
+      infoText.value = `题库同步失败（将继续使用本地缓存/内置题库）：${e?.message ?? String(e)}`
+    }
     await router.push(route.query.redirect?.toString() || '/')
   } catch (e) {
     errorText.value = e?.message ?? String(e)
@@ -31,6 +43,9 @@ async function onSignup() {
   errorText.value = ''
   infoText.value = ''
   try {
+    if (!hasSupabaseConfig()) {
+      throw new Error('未配置 Supabase 环境变量：请设置 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY')
+    }
     await signUp({ email: email.value.trim(), password: password.value })
     infoText.value = '注册成功：如果开启了邮箱确认，请先去邮箱完成验证后再登录。'
   } catch (e) {
@@ -162,4 +177,3 @@ async function onSignup() {
   color: var(--muted);
 }
 </style>
-

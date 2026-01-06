@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "gen:problems-sql": "node scripts/generate-problems-sql.mjs"
+    "gen:problems-sql": "node scripts/generate-problems-sql.mjs",
+    "gen:problems-json": "node scripts/generate-problems-json.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
