@@ -5,7 +5,7 @@ import { fetchStats } from '../lib/localApi'
 import { clearAllLocalData, getProblemsMeta } from '../lib/localStore'
 import { hasSupabaseConfig } from '../lib/supabase'
 import { user } from '../lib/session'
-import { setTheme, settings } from '../lib/settings'
+import { resetSettings, setTheme, settings } from '../lib/settings'
 import { syncProblemsFromSupabase } from '../lib/sync'
 
 const loading = ref(false)
@@ -17,7 +17,7 @@ const correct = ref(0)
 const wrongActive = ref(0)
 const favorites = ref(0)
 
-const problemsMeta = computed(() => getProblemsMeta())
+const problemsMeta = ref(getProblemsMeta())
 
 const theme = computed({
   get: () => settings.value.theme,
@@ -33,6 +33,7 @@ async function load() {
     correct.value = s.correct
     wrongActive.value = s.wrongActive
     favorites.value = s.favorites
+    problemsMeta.value = getProblemsMeta()
   } catch (e) {
     errorText.value = e?.message ?? String(e)
     total.value = 0
@@ -46,8 +47,10 @@ async function load() {
 
 async function onResetLocal() {
   clearAllLocalData()
+  resetSettings()
   infoText.value = '已清空本地缓存（题库/收藏/错题/提交记录）。'
   errorText.value = ''
+  problemsMeta.value = getProblemsMeta()
   await load()
 }
 
@@ -61,6 +64,7 @@ async function onSyncProblems() {
     }
     const count = await syncProblemsFromSupabase()
     infoText.value = `题库已同步到本地（${count} 题）`
+    problemsMeta.value = getProblemsMeta()
     await load()
   } catch (e) {
     errorText.value = e?.message ?? String(e)

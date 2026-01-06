@@ -2,9 +2,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useRouter } from 'vue-router'
-import { fetchAdjacentProblemId, fetchProblem, fetchUserStates, submitAnswer, toggleFavorite } from '../lib/localApi'
+import { fetchAdjacentProblemId, fetchProblem, fetchUserStates, markWrong, submitAnswer, toggleFavorite } from '../lib/localApi'
 import { settings } from '../lib/settings'
-import { user } from '../lib/session'
+import { getPrevNextFromSession } from '../lib/navSession'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,14 +23,13 @@ const busyFavorite = ref(false)
 const navBusy = ref(false)
 const prevId = ref(null)
 const nextId = ref(null)
+const sessionLabel = ref(null)
 
 const optionsList = computed(() => {
   const opts = problem.value?.options
   if (!opts) return []
   return Object.entries(opts).map(([k, v]) => ({ key: k, text: v }))
 })
-
-const canSubmit = computed(() => true)
 
 const correctChoices = computed(() => problem.value?.answer?.choices ?? [])
 const isMulti = computed(() => problem.value?.question_type === 'multiple_choice')
@@ -62,16 +61,23 @@ async function load() {
     problem.value = await fetchProblem(id.value)
     const m = await fetchUserStates([problem.value.id])
     state.value = m.get(problem.value.id) ?? null
-    prevId.value = await fetchAdjacentProblemId({
-      section: problem.value.section,
-      sourceNo: problem.value.source_no,
-      direction: 'prev',
-    })
-    nextId.value = await fetchAdjacentProblemId({
-      section: problem.value.section,
-      sourceNo: problem.value.source_no,
-      direction: 'next',
-    })
+    const fromSession = getPrevNextFromSession(problem.value.id)
+    sessionLabel.value = fromSession.inSession ? fromSession.label : null
+    if (fromSession.inSession) {
+      prevId.value = fromSession.prevId
+      nextId.value = fromSession.nextId
+    } else {
+      prevId.value = await fetchAdjacentProblemId({
+        section: problem.value.section,
+        sourceNo: problem.value.source_no,
+        direction: 'prev',
+      })
+      nextId.value = await fetchAdjacentProblemId({
+        section: problem.value.section,
+        sourceNo: problem.value.source_no,
+        direction: 'next',
+      })
+    }
   } catch (e) {
     errorText.value = e?.message ?? String(e)
   } finally {
@@ -100,6 +106,18 @@ async function onSubmit() {
       isCorrect: isCorrect.value,
     })
     submitResult.value = { ok: isCorrect.value, text: isCorrect.value ? '回答正确' : '回答错误' }
+    const m = await fetchUserStates([problem.value.id])
+    state.value = m.get(problem.value.id) ?? null
+  } catch (e) {
+    submitResult.value = { ok: null, text: e?.message ?? String(e) }
+  }
+}
+
+async function onMarkWrong() {
+  if (!problem.value) return
+  try {
+    await markWrong({ problemId: problem.value.id })
+    submitResult.value = { ok: false, text: '已加入错题' }
     const m = await fetchUserStates([problem.value.id])
     state.value = m.get(problem.value.id) ?? null
   } catch (e) {
@@ -177,6 +195,8 @@ watch(settings, () => load(), { deep: true })
         </button>
       </div>
 
+      <div v-if="sessionLabel" class="session">{{ sessionLabel }}</div>
+
       <div class="stem">{{ problem.stem }}</div>
 
       <div v-if="optionsList.length" class="options">
@@ -198,10 +218,18 @@ watch(settings, () => load(), { deep: true })
       <div class="actions">
         <button class="btn" type="button" :disabled="!prevId || navBusy" @click="goPrev">上一题</button>
         <button class="btn btn--primary" type="button" @click="onSubmit">
-          {{ canSubmit ? '提交' : '显示答案' }}
+          提交
         </button>
         <button class="btn" type="button" @click="reveal = !reveal">
           {{ reveal ? '隐藏答案' : '显示答案' }}
+        </button>
+        <button
+          v-if="problem.question_type === 'fill_blank'"
+          class="btn"
+          type="button"
+          @click="onMarkWrong"
+        >
+          加入错题
         </button>
         <button class="btn" type="button" :disabled="!nextId || navBusy" @click="goNext">下一题</button>
       </div>
@@ -264,6 +292,18 @@ watch(settings, () => load(), { deep: true })
   font-size: 16px;
   line-height: 1.6;
   white-space: pre-wrap;
+}
+
+.session {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: fit-content;
 }
 
 .options {

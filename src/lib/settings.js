@@ -34,3 +34,8 @@ export function setTheme(nextTheme) {
   const theme = nextTheme === 'dark' ? 'dark' : 'light'
   settings.value = { ...settings.value, theme }
 }
+
+export function resetSettings() {
+  localStorage.removeItem(STORAGE_KEY)
+  settings.value = { ...defaults }
+}

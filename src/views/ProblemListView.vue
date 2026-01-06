@@ -1,13 +1,15 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
-import { fetchProblems, fetchUserStates } from '../lib/localApi'
+import { RouterLink, useRouter } from 'vue-router'
+import { fetchProblems, fetchUserStates, getProblemIds } from '../lib/localApi'
 import { settings } from '../lib/settings'
+import { setNavSession } from '../lib/navSession'
 
 const section = ref('all')
 const query = ref('')
 const page = ref(1)
 const pageSize = 20
+const router = useRouter()
 
 const loading = ref(false)
 const errorText = ref('')
@@ -59,6 +61,33 @@ watch([section, query], () => {
 watch([section, query, page, settings], () => load(), { deep: true })
 
 onMounted(load)
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
+async function startRandom() {
+  loading.value = true
+  errorText.value = ''
+  try {
+    const ids = await getProblemIds({ section: section.value, query: query.value })
+    if (!ids.length) {
+      errorText.value = '当前筛选下没有题目'
+      return
+    }
+    shuffle(ids)
+    setNavSession({ ids, label: '随机练习' })
+    await router.push(`/p/${ids[0]}`)
+  } catch (e) {
+    errorText.value = e?.message ?? String(e)
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -78,6 +107,8 @@ onMounted(load)
         <span class="label">搜索</span>
         <input v-model="query" class="input" placeholder="输入关键词（题干）" />
       </label>
+
+      <button class="btn" type="button" :disabled="loading" @click="startRandom">随机乱序答题</button>
     </div>
 
     <p v-if="errorText" class="alert">{{ errorText }}</p>

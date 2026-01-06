@@ -89,6 +89,8 @@ function parseProblems(text) {
   finishCurrent()
 
   return problems.map((p) => {
+    const sectionOrder = ['单项选择题', '多项选择题', '填空题']
+    const sectionKey = Math.max(0, sectionOrder.indexOf(p.section)) + 1
     let questionType = 'single_choice'
     if (p.section.includes('多项')) questionType = 'multiple_choice'
     if (p.section.includes('填空')) questionType = 'fill_blank'
@@ -104,8 +106,7 @@ function parseProblems(text) {
     }
 
     return {
-      // id is filled by Supabase; for local JSON we use a stable synthetic id.
-      id: `${p.section}:${p.sourceNo}`,
+      id: `P${sectionKey}_${p.sourceNo}`,
       section: p.section,
       source_no: p.sourceNo,
       question_type: questionType,
@@ -127,4 +128,3 @@ fs.mkdirSync(path.dirname(outputPath), { recursive: true })
 fs.writeFileSync(outputPath, JSON.stringify(rows, null, 2), 'utf8')
 
 console.log(`OK: wrote ${rows.length} problems -> ${path.relative(repoRoot, outputPath)}`)
-

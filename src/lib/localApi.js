@@ -42,6 +42,24 @@ export async function fetchProblems({ section, query, page, pageSize }) {
   return { rows, total }
 }
 
+export async function getProblemIds({ section, query }) {
+  const all = await getProblems()
+  const q = (query ?? '').trim()
+
+  let filtered = all
+  if (section && section !== 'all') filtered = filtered.filter((p) => p.section === section)
+  if (q) filtered = filtered.filter((p) => (p.stem ?? '').includes(q))
+
+  filtered = [...filtered].sort((a, b) => {
+    const sa = sectionIndex(a.section)
+    const sb = sectionIndex(b.section)
+    if (sa !== sb) return sa - sb
+    return (a.source_no ?? 0) - (b.source_no ?? 0)
+  })
+
+  return filtered.map((p) => p.id)
+}
+
 export async function fetchProblem(id) {
   const all = await getProblems()
   const p = all.find((x) => x.id === id)
@@ -71,6 +89,16 @@ export async function submitAnswer({ problemId, answer, isCorrect }) {
 
 export async function toggleFavorite({ problemId, nextValue }) {
   upsertUserState(problemId, { is_favorite: !!nextValue, updated_at: new Date().toISOString() })
+}
+
+export async function markWrong({ problemId }) {
+  const now = new Date().toISOString()
+  upsertUserState(problemId, {
+    last_answer: { manual: 'mark_wrong' },
+    last_is_correct: false,
+    last_answered_at: now,
+    updated_at: now,
+  })
 }
 
 export async function fetchAdjacentProblemId({ section, sourceNo, direction }) {
@@ -127,4 +155,3 @@ export async function fetchStats() {
 
   return { total, correct, wrongActive, favorites }
 }
-

@@ -1,6 +1,14 @@
 import { getSupabase } from './supabase'
 import { setProblems, setProblemsMeta } from './localStore'
 
+const SECTION_ORDER = ['单项选择题', '多项选择题', '填空题']
+
+function makeLocalId(section, sourceNo) {
+  const idx = SECTION_ORDER.indexOf(section)
+  const sectionKey = (idx === -1 ? 0 : idx) + 1
+  return `P${sectionKey}_${sourceNo}`
+}
+
 export async function syncProblemsFromSupabase() {
   const supabase = getSupabase()
 
@@ -21,7 +29,17 @@ export async function syncProblemsFromSupabase() {
 
     if (error) throw error
     const rows = data ?? []
-    all.push(...rows)
+    all.push(
+      ...rows.map((r) => ({
+        id: makeLocalId(r.section, r.source_no),
+        section: r.section,
+        source_no: r.source_no,
+        question_type: r.question_type,
+        stem: r.stem,
+        options: r.options,
+        answer: r.answer,
+      })),
+    )
     if (rows.length < pageSize) break
     from += pageSize
   }
@@ -30,4 +48,3 @@ export async function syncProblemsFromSupabase() {
   setProblemsMeta({ source: 'supabase', syncedAt: new Date().toISOString(), count: all.length })
   return all.length
 }
-
