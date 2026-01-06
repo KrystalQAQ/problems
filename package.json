@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --mode production",
+    "build": "vite build --mode production",
     "preview": "vite preview",
     "gen:problems-sql": "node scripts/generate-problems-sql.mjs",
     "gen:problems-json": "node scripts/generate-problems-json.mjs"
