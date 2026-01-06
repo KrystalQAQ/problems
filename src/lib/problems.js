@@ -1,6 +1,13 @@
 import { supabase } from './supabase'
 import { getUser } from './session'
 
+const SECTION_ORDER = ['单项选择题', '多项选择题', '填空题']
+
+function sectionIndex(section) {
+  const idx = SECTION_ORDER.indexOf(section)
+  return idx === -1 ? Number.MAX_SAFE_INTEGER : idx
+}
+
 export async function fetchProblems({ section, query, page, pageSize }) {
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
@@ -29,6 +36,43 @@ export async function fetchProblem(id) {
     .single()
   if (error) throw error
   return data
+}
+
+export async function fetchAdjacentProblemId({ section, sourceNo, direction }) {
+  const dir = direction === 'prev' ? 'prev' : 'next'
+
+  if (!section || !Number.isFinite(sourceNo)) return null
+
+  const within = supabase
+    .from('problems')
+    .select('id, source_no')
+    .eq('section', section)
+
+  const withinQuery =
+    dir === 'next'
+      ? within.gt('source_no', sourceNo).order('source_no', { ascending: true }).limit(1)
+      : within.lt('source_no', sourceNo).order('source_no', { ascending: false }).limit(1)
+
+  const { data: withinData, error: withinError } = await withinQuery
+  if (withinError) throw withinError
+  if (withinData?.[0]?.id) return withinData[0].id
+
+  const idx = sectionIndex(section)
+  if (!Number.isFinite(idx) || idx === Number.MAX_SAFE_INTEGER) return null
+
+  const otherSection = dir === 'next' ? SECTION_ORDER[idx + 1] : SECTION_ORDER[idx - 1]
+  if (!otherSection) return null
+
+  const otherQuery = supabase
+    .from('problems')
+    .select('id, source_no')
+    .eq('section', otherSection)
+    .order('source_no', { ascending: dir === 'next' })
+    .limit(1)
+
+  const { data: otherData, error: otherError } = await otherQuery
+  if (otherError) throw otherError
+  return otherData?.[0]?.id ?? null
 }
 
 export async function fetchUserStates(problemIds) {
@@ -90,4 +134,3 @@ export async function toggleFavorite({ problemId, nextValue }) {
   )
   if (error) throw error
 }
-

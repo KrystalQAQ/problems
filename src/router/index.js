@@ -5,6 +5,8 @@ const ProblemListView = () => import('../views/ProblemListView.vue')
 const ProblemDetailView = () => import('../views/ProblemDetailView.vue')
 const LoginView = () => import('../views/LoginView.vue')
 const MeView = () => import('../views/MeView.vue')
+const FavoritesView = () => import('../views/FavoritesView.vue')
+const WrongView = () => import('../views/WrongView.vue')
 const NotFoundView = () => import('../views/NotFoundView.vue')
 
 const router = createRouter({
@@ -14,6 +16,8 @@ const router = createRouter({
     { path: '/p/:id', name: 'problem', component: ProblemDetailView, props: true },
     { path: '/login', name: 'login', component: LoginView },
     { path: '/me', name: 'me', component: MeView, meta: { requiresAuth: true } },
+    { path: '/me/favorites', name: 'favorites', component: FavoritesView, meta: { requiresAuth: true } },
+    { path: '/me/wrong', name: 'wrong', component: WrongView, meta: { requiresAuth: true } },
     { path: '/:pathMatch(.*)*', name: '404', component: NotFoundView },
   ],
 })
@@ -26,4 +30,3 @@ router.beforeEach(async (to) => {
 })
 
 export default router
-

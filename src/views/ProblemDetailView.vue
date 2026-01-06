@@ -1,10 +1,12 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { fetchProblem, fetchUserStates, submitAnswer, toggleFavorite } from '../lib/problems'
+import { useRouter } from 'vue-router'
+import { fetchAdjacentProblemId, fetchProblem, fetchUserStates, submitAnswer, toggleFavorite } from '../lib/problems'
 import { user } from '../lib/session'
 
 const route = useRoute()
+const router = useRouter()
 const id = computed(() => route.params.id)
 
 const loading = ref(false)
@@ -17,6 +19,9 @@ const submitResult = ref(null)
 
 const state = ref(null)
 const busyFavorite = ref(false)
+const navBusy = ref(false)
+const prevId = ref(null)
+const nextId = ref(null)
 
 const optionsList = computed(() => {
   const opts = problem.value?.options
@@ -54,6 +59,16 @@ async function load() {
     problem.value = await fetchProblem(id.value)
     const m = await fetchUserStates([problem.value.id])
     state.value = m.get(problem.value.id) ?? null
+    prevId.value = await fetchAdjacentProblemId({
+      section: problem.value.section,
+      sourceNo: problem.value.source_no,
+      direction: 'prev',
+    })
+    nextId.value = await fetchAdjacentProblemId({
+      section: problem.value.section,
+      sourceNo: problem.value.source_no,
+      direction: 'next',
+    })
   } catch (e) {
     errorText.value = e?.message ?? String(e)
   } finally {
@@ -104,6 +119,34 @@ async function onToggleFavorite() {
   }
 }
 
+async function goPrev() {
+  if (!prevId.value) return
+  navBusy.value = true
+  try {
+    await router.push({ name: 'problem', params: { id: prevId.value } })
+    picked.value = []
+    reveal.value = false
+    submitResult.value = null
+    await load()
+  } finally {
+    navBusy.value = false
+  }
+}
+
+async function goNext() {
+  if (!nextId.value) return
+  navBusy.value = true
+  try {
+    await router.push({ name: 'problem', params: { id: nextId.value } })
+    picked.value = []
+    reveal.value = false
+    submitResult.value = null
+    await load()
+  } finally {
+    navBusy.value = false
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -149,12 +192,14 @@ onMounted(load)
       <div v-else class="muted">该题无选项，点击“显示答案”查看。</div>
 
       <div class="actions">
+        <button class="btn" type="button" :disabled="!prevId || navBusy" @click="goPrev">上一题</button>
         <button class="btn btn--primary" type="button" @click="onSubmit">
           {{ user ? '提交' : '显示答案' }}
         </button>
         <button class="btn" type="button" @click="reveal = !reveal">
           {{ reveal ? '隐藏答案' : '显示答案' }}
         </button>
+        <button class="btn" type="button" :disabled="!nextId || navBusy" @click="goNext">下一题</button>
       </div>
 
       <div
@@ -336,4 +381,3 @@ onMounted(load)
   margin-top: 10px;
 }
 </style>
-

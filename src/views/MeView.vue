@@ -1,5 +1,6 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { user } from '../lib/session'
 
@@ -9,8 +10,7 @@ const errorText = ref('')
 const correct = ref(0)
 const total = ref(0)
 const favorites = ref(0)
-
-const wrong = computed(() => total.value - correct.value)
+const wrongActive = ref(0)
 
 async function load() {
   if (!user.value) return
@@ -30,6 +30,13 @@ async function load() {
     if (correctErr) throw correctErr
     correct.value = correctCount ?? 0
 
+    const { count: wrongActiveCount, error: wrongActiveErr } = await supabase
+      .from('user_problem_state')
+      .select('problem_id', { count: 'exact', head: true })
+      .eq('last_is_correct', false)
+    if (wrongActiveErr) throw wrongActiveErr
+    wrongActive.value = wrongActiveCount ?? 0
+
     const { count: favCount, error: favErr } = await supabase
       .from('user_problem_state')
       .select('problem_id', { count: 'exact', head: true })
@@ -44,6 +51,7 @@ async function load() {
 }
 
 onMounted(load)
+watch(user, () => load())
 </script>
 
 <template>
@@ -62,18 +70,18 @@ onMounted(load)
           <div class="k">总提交</div>
           <div class="v">{{ total }}</div>
         </div>
-        <div class="stat">
+        <div class="stat stat--disabled">
           <div class="k">正确</div>
           <div class="v">{{ correct }}</div>
         </div>
-        <div class="stat">
-          <div class="k">错误</div>
-          <div class="v">{{ wrong }}</div>
-        </div>
-        <div class="stat">
+        <RouterLink class="stat stat--link" to="/me/wrong">
+          <div class="k">错题</div>
+          <div class="v">{{ wrongActive }}</div>
+        </RouterLink>
+        <RouterLink class="stat stat--link" to="/me/favorites">
           <div class="k">收藏</div>
           <div class="v">{{ favorites }}</div>
-        </div>
+        </RouterLink>
       </div>
     </div>
   </div>
@@ -108,6 +116,20 @@ onMounted(load)
   border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--bg);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.stat--link {
+  cursor: pointer;
+}
+
+.stat--link:hover {
+  border-color: color-mix(in oklab, var(--primary), #000 40%);
+}
+
+.stat--disabled {
+  opacity: 0.85;
 }
 
 .k {
@@ -129,4 +151,3 @@ onMounted(load)
   background: color-mix(in oklab, var(--danger), var(--bg) 86%);
 }
 </style>
-
