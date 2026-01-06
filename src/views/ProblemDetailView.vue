@@ -225,16 +225,18 @@ watch(settings, () => load(), { deep: true })
         </button>
       </div>
 
-      <div v-else class="muted">该题无选项，点击“显示答案”查看。</div>
+      <!-- <div v-else class="muted">该题无选项，点击“显示答案”查看。</div> -->
 
       <div class="actions">
         <button class="btn" type="button" :disabled="!prevId || navBusy" @click="goPrev">上一题</button>
         <button class="btn btn--primary" type="button" @click="onSubmit">
           提交
         </button>
-        <button class="btn" type="button" @click="reveal = !reveal">
+        <!-- <button class="btn" type="button" @click="reveal = !reveal">
           {{ reveal ? '隐藏答案' : '显示答案' }}
-        </button>
+        </button> -->
+
+        <button class="btn" type="button" :disabled="!nextId || navBusy" @click="goNext">下一题</button>
         <button
           v-if="problem.question_type === 'fill_blank'"
           class="btn"
@@ -243,7 +245,6 @@ watch(settings, () => load(), { deep: true })
         >
           加入错题
         </button>
-        <button class="btn" type="button" :disabled="!nextId || navBusy" @click="goNext">下一题</button>
       </div>
 
       <div
@@ -270,10 +271,12 @@ watch(settings, () => load(), { deep: true })
 
 <style scoped>
 .card {
-  padding: 14px;
+  padding: 24px;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--card);
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .head {
@@ -285,7 +288,7 @@ watch(settings, () => load(), { deep: true })
 
 .meta {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -300,10 +303,11 @@ watch(settings, () => load(), { deep: true })
 }
 
 .stem {
-  margin-top: 10px;
-  font-size: 16px;
-  line-height: 1.6;
+  margin-top: 16px;
+  font-size: 20px;
+  line-height: 1.7;
   white-space: pre-wrap;
+  font-weight: 500;
 }
 
 .session {
@@ -319,22 +323,24 @@ watch(settings, () => load(), { deep: true })
 }
 
 .options {
-  margin-top: 12px;
+  margin-top: 20px;
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .option {
   text-align: left;
   display: grid;
-  grid-template-columns: 34px 1fr;
-  gap: 10px;
-  padding: 12px;
+  grid-template-columns: 38px 1fr;
+  gap: 12px;
+  padding: 16px;
   border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--bg);
   cursor: pointer;
   color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 .option--picked {
@@ -353,8 +359,8 @@ watch(settings, () => load(), { deep: true })
 }
 
 .key {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -362,6 +368,7 @@ watch(settings, () => load(), { deep: true })
   border: 1px solid var(--border);
   background: var(--card);
   font-weight: 700;
+  font-size: 15px;
 }
 
 .text {
@@ -369,19 +376,21 @@ watch(settings, () => load(), { deep: true })
 }
 
 .actions {
-  margin-top: 14px;
+  margin-top: 24px;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .btn {
-  padding: 10px 12px;
+  padding: 12px 18px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .btn--primary {
@@ -400,11 +409,12 @@ watch(settings, () => load(), { deep: true })
 }
 
 .result {
-  margin-top: 12px;
-  padding: 10px 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--bg);
+  font-size: 15px;
 }
 
 .result--ok {
@@ -418,24 +428,28 @@ watch(settings, () => load(), { deep: true })
 }
 
 .answer {
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: 16px;
+  padding: 16px;
   border-radius: 14px;
   border: 1px dashed var(--border);
   background: color-mix(in oklab, var(--card), var(--bg) 30%);
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 .label {
   color: var(--muted);
-  font-size: 12px;
-  margin-bottom: 6px;
+  font-size: 14px;
+  margin-bottom: 8px;
+  font-weight: 500;
 }
 
 .alert {
-  padding: 10px 12px;
+  padding: 14px 16px;
   border-radius: 12px;
   border: 1px solid color-mix(in oklab, var(--danger), #000 40%);
   background: color-mix(in oklab, var(--danger), var(--bg) 86%);
+  font-size: 15px;
 }
 
 .muted {
@@ -443,7 +457,7 @@ watch(settings, () => load(), { deep: true })
 }
 
 .small {
-  font-size: 12px;
-  margin-top: 10px;
+  font-size: 13px;
+  margin-top: 14px;
 }
 </style>
