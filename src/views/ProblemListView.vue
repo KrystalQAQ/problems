@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { fetchProblems, fetchUserStates, getProblemIds } from '../lib/localApi'
 import { settings } from '../lib/settings'
-import { setNavSession } from '../lib/navSession'
+import { clearNavSession, setNavSession } from '../lib/navSession'
 
 const section = ref('all')
 const query = ref('')
@@ -115,7 +115,13 @@ async function startRandom() {
     <div v-if="loading" class="muted">加载中…</div>
 
     <div v-else class="list">
-      <RouterLink v-for="row in rows" :key="row.id" class="item" :to="`/p/${row.id}`">
+      <RouterLink
+        v-for="row in rows"
+        :key="row.id"
+        class="item"
+        :to="`/p/${row.id}`"
+        @click="clearNavSession()"
+      >
         <div class="item__top">
           <span class="meta">{{ row.section }} · #{{ row.source_no }} · {{ typeLabel(row.question_type) }}</span>
           <span v-if="stateMap.get(row.id)?.is_favorite" class="fav">收藏</span>
