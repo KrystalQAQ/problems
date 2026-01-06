@@ -33,6 +33,7 @@ const optionsList = computed(() => {
 
 const correctChoices = computed(() => problem.value?.answer?.choices ?? [])
 const isMulti = computed(() => problem.value?.question_type === 'multiple_choice')
+const showCorrection = computed(() => submitResult.value?.ok === false && picked.value.length > 0)
 
 function togglePick(k) {
   if (isMulti.value) {
@@ -53,6 +54,17 @@ const isCorrect = computed(() => {
     normalizeChoices(picked.value).join(',') === normalizeChoices(correctChoices.value).join(',')
   )
 })
+
+function optionClass(key) {
+  if (!showCorrection.value) return { 'option--picked': picked.value.includes(key) }
+  const isPicked = picked.value.includes(key)
+  const isCorrect = correctChoices.value.includes(key)
+  return {
+    'option--picked': isPicked,
+    'option--correct': isCorrect,
+    'option--wrong': isPicked && !isCorrect,
+  }
+}
 
 async function load() {
   loading.value = true
@@ -204,7 +216,7 @@ watch(settings, () => load(), { deep: true })
           v-for="o in optionsList"
           :key="o.key"
           class="option"
-          :class="{ 'option--picked': picked.includes(o.key) }"
+          :class="optionClass(o.key)"
           type="button"
           @click="togglePick(o.key)"
         >
@@ -328,6 +340,16 @@ watch(settings, () => load(), { deep: true })
 .option--picked {
   border-color: color-mix(in oklab, var(--primary), #000 40%);
   background: color-mix(in oklab, var(--primary), var(--bg) 90%);
+}
+
+.option--correct {
+  border-color: color-mix(in oklab, var(--ok), #000 40%);
+  background: color-mix(in oklab, var(--ok), var(--bg) 92%);
+}
+
+.option--wrong {
+  border-color: color-mix(in oklab, var(--danger), #000 40%);
+  background: color-mix(in oklab, var(--danger), var(--bg) 92%);
 }
 
 .key {
